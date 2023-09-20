@@ -17,7 +17,7 @@ var (
 	addr = os.Getenv("REMINDER_SMTP_ADDR")
 	user = os.Getenv("REMINDER_SMTP_USER")
 	pass = os.Getenv("REMINDER_SMTP_PASS")
-	t    = template.Must(template.New("reminder").Parse("From: {{.From}}\r\nTo: {{.To}}\r\nSubject: {{.Subject}}\r\n\r\n{{.Body}}"))
+	t    = template.Must(template.New("reminder").Parse("From: {{.From}}\r\nTo: {{.To}}\r\nSubject: {{.Subject}}\r\nContent-Type: {{.ContentType}}\r\n\r\n{{.Body}}"))
 )
 
 type Event struct {
@@ -70,11 +70,12 @@ func main() {
 
 func notification(event *Event, day int) {
 	type Data struct {
-		From    string
-		To      string
-		Subject string
-		Body    string
-		Event   *Event
+		From        string
+		To          string
+		Subject     string
+		ContentType string
+		Body        string
+		Event       *Event
 	}
 
 	if addr == "" {
@@ -96,11 +97,12 @@ func notification(event *Event, day int) {
 		body += fmt.Sprintf("今天「%s」\n\n", event.Title)
 	}
 	data := Data{
-		From:    fmt.Sprintf("%s <%s>", mime.BEncoding.Encode("UTF-8", "Monitor"), user),
-		To:      user,
-		Subject: mime.BEncoding.Encode("UTF-8", fmt.Sprintf("「RED」%s", subject)),
-		Body:    body,
-		Event:   event,
+		From:        fmt.Sprintf("%s <%s>", mime.BEncoding.Encode("UTF-8", "Monitor"), user),
+		To:          user,
+		Subject:     mime.BEncoding.Encode("UTF-8", fmt.Sprintf("「RED」%s", subject)),
+		ContentType: "text/plain; charset=utf-8",
+		Body:        body,
+		Event:       event,
 	}
 
 	var buf bytes.Buffer
