@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/smtp"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -17,6 +18,7 @@ var (
 	addr = os.Getenv("REMINDER_SMTP_ADDR")
 	user = os.Getenv("REMINDER_SMTP_USER")
 	pass = os.Getenv("REMINDER_SMTP_PASS")
+	to   = os.Getenv("REMINDER_SMTP_TO")
 	t    = template.Must(template.New("reminder").Parse("From: {{.From}}\r\nTo: {{.To}}\r\nSubject: {{.Subject}}\r\nContent-Type: {{.ContentType}}\r\n\r\n{{.Body}}"))
 )
 
@@ -98,7 +100,7 @@ func notification(event *Event, day int) {
 	}
 	data := Data{
 		From:        fmt.Sprintf("%s <%s>", mime.BEncoding.Encode("UTF-8", "Monitor"), user),
-		To:          user,
+		To:          to,
 		Subject:     mime.BEncoding.Encode("UTF-8", fmt.Sprintf("「RED」%s", subject)),
 		ContentType: "text/plain; charset=utf-8",
 		Body:        body,
@@ -112,7 +114,7 @@ func notification(event *Event, day int) {
 	}
 
 	auth := smtp.PlainAuth("", user, pass, host)
-	if err := smtp.SendMail(addr, auth, user, []string{user}, buf.Bytes()); err != nil {
+	if err := smtp.SendMail(addr, auth, user, strings.Split(to, ","), buf.Bytes()); err != nil {
 		slog.Error("send notification fail", "err", err)
 		return
 	}
